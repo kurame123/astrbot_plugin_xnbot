@@ -6,6 +6,7 @@ from src.emojiCore.manager import (
     init_emoji_system,
     handle_incoming_emoji,
     find_best_emoji_for_text,
+    close_emoji_system,
 )
 from src.emojiCore.schemas import EmojiRecord, EmojiMatch
 
@@ -13,6 +14,7 @@ __all__ = [
     "init_emoji_system",
     "handle_incoming_emoji",
     "find_best_emoji_for_text",
+    "close_emoji_system",
     "EmojiRecord",
     "EmojiMatch",
 ]

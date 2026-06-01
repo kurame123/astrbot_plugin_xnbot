@@ -119,17 +119,39 @@ class XNBotPlugin(star.Star):
             logger.error(f"[XNBot] 初始化失败: {e}", exc_info=True)
 
     async def terminate(self) -> None:
-        """插件禁用/重载时清理资源（重载场景下不做清理，只重置标志）"""
+        """插件禁用/重载时清理资源"""
         try:
+            # 关闭心跳监控
             from XN_Core.heartbeat import get_monitor
             get_monitor().cancel_all()
         except Exception:
             pass
 
-        # 不停止 worker —— 重载时单例仍在内存，停了就起不来了
-        # 只重置标志，让下次 initialize 重新检查
+        try:
+            # 关闭表情系统（释放数据库连接）
+            from src.emojiCore import close_emoji_system
+            close_emoji_system()
+        except Exception:
+            pass
+
+        try:
+            # 关闭记忆系统
+            from src.XN_Memory import get_writer
+            get_writer().stop_worker()
+        except Exception:
+            pass
+
+        try:
+            # 关闭图片描述数据库
+            from src.bot.img.store import get_image_store
+            store = get_image_store()
+            if hasattr(store, 'close'):
+                store.close()
+        except Exception:
+            pass
+
         self._initialized = False
-        logger.info("[XNBot] 小雫插件已卸载（资源保留，等待重载）")
+        logger.info("[XNBot] 小雫插件已卸载，资源已清理")
 
     # ========================
     # 消息处理：接管所有对话
