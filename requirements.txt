@@ -1,0 +1,16 @@
+# XNBot by AstrBot 插件依赖
+# 在 AstrBot 的 Python 环境中安装：
+# C:\Users\Administrator\AppData\Roaming\uv\tools\astrbot\Scripts\python.exe -m pip install -r requirements.txt
+
+# WebUI 相关
+fastapi>=0.100.0
+uvicorn>=0.20.0
+psutil>=5.9.0
+toml>=0.10.2
+
+# 图数据库（可选，不装则图记忆功能不可用）
+kuzu>=0.11.0
+
+# AI 调用（AstrBot 环境已有，无需重复安装）
+# httpx
+# openai

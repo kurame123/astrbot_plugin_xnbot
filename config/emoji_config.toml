@@ -1,0 +1,26 @@
+# =========================
+# 表情管理系统配置
+# =========================
+
+[storage]
+# 表情图片存储目录（相对于项目根目录）
+emoji_dir = "emoji"
+# 表情数据库路径
+db_path = "data/emoji.db"
+
+[models]
+# 视觉描述模型（用于生成表情文本描述）
+vision_model = "vision_emoji_desc"
+# 嵌入模型（用于生成向量）
+embedding_model = "embedding_bge_m3"
+
+[prompt]
+# 提示词已移至 config/rey_config.toml 的 [vision_emoji_desc] 部分
+
+[retrieval]
+# 余弦相似度阈值（低于此值不发送表情）
+similarity_threshold = 0.51
+# 检索时最多加载的表情数量
+max_candidates = 100
+# 每条回复最多发送的表情数量
+max_send_per_reply = 1

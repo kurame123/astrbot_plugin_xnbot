@@ -1,0 +1,118 @@
+# =========================
+# AI 服务配置示例
+# 复制此文件为 ai_config.toml 并填入你的 API Key
+# =========================
+
+[servers.siliconflow]
+base_url = "https://api.siliconflow.cn/v1"
+api_key  = "your-siliconflow-api-key"
+
+[servers.deepseek]
+base_url = "https://api.deepseek.com/v1"
+api_key  = "your-deepseek-api-key"
+timeout  = 120
+
+# 兼容旧字段（默认服务商）
+[server]
+base_url = "https://api.siliconflow.cn/v1"
+api_key  = "your-siliconflow-api-key"
+
+# =========================
+# 模型列表
+# =========================
+
+[[models]] #回复生成模型
+name     = "roleplay_main"
+provider = "deepseek"
+model    = "deepseek-v4-flash"
+fallback = "roleplay_fallback"
+[models.parameters]
+temperature = 0.5
+top_p       = 0.9
+max_tokens  = 2048
+
+[[models]] #回复生成备用模型
+name     = "roleplay_fallback"
+provider = "siliconflow"
+model    = "deepseek-ai/DeepSeek-V4-Flash"
+[models.parameters]
+temperature = 0.5
+top_p       = 0.9
+max_tokens  = 2048
+
+[[models]] # 工具模型
+name     = "tools"
+provider = "siliconflow"
+model    = "deepseek-ai/DeepSeek-V4-Flash"
+[models.parameters]
+temperature = 0.6
+top_p       = 0.9
+max_tokens  = 1024
+
+[[models]] # 嵌入模型
+name     = "embedding_bge_m3"
+provider = "siliconflow"
+model    = "Pro/BAAI/bge-m3"
+[models.parameters]
+
+[[models]] # 视觉模型（表情描述）
+name     = "vision_emoji_desc"
+provider = "siliconflow"
+model    = "Qwen/Qwen2.5-VL-32B-Instruct"
+[models.parameters]
+temperature = 0.3
+max_tokens  = 256
+
+[[models]] # 视觉模型（普通图片描述）
+name     = "vision_image_desc"
+provider = "siliconflow"
+model    = "Qwen/Qwen3-VL-32B-Instruct"
+[models.parameters]
+temperature = 0.2
+max_tokens  = 1024
+
+[[models]] # 情绪分析模型
+name     = "emotion_analyzer"
+provider = "siliconflow"
+model    = "deepseek-ai/DeepSeek-V3.2"
+[models.parameters]
+temperature = 0.2
+top_p       = 0.9
+max_tokens  = 256
+
+[[models]] # 回复切分模型
+name     = "reply_segmenter"
+provider = "deepseek"
+model    = "deepseek-v4-flash"
+[models.parameters]
+temperature = 0.3
+top_p       = 0.9
+max_tokens  = 512
+
+[[models]] # 关键词提取模型
+name     = "keyword_extractor"
+provider = "siliconflow"
+model    = "deepseek-ai/DeepSeek-V4-Flash"
+[models.parameters]
+temperature = 0.2
+top_p       = 0.9
+max_tokens  = 256
+
+[[models]]
+name     = "ie_extractor"
+provider = "deepseek"
+model    = "deepseek-v4-flash"
+fallback = "ie_extractor_fallback"
+[models.parameters]
+temperature = 0.3
+top_p       = 0.9
+max_tokens  = 512
+
+[[models]]
+name     = "ie_extractor_fallback"
+provider = "siliconflow"
+model    = "deepseek-ai/DeepSeek-V3.2"
+[models.parameters]
+temperature = 0.3
+top_p       = 0.9
+max_tokens  = 512

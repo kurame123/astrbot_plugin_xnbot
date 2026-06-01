@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Data files (用户数据，不提交)
+data/*.db
+data/logs/
+data/core_state/
+data/vector_index/*.index
+data/graph_index/
+
+# Emoji files (用户收集的表情，不提交)
+emoji/*.jpg
+emoji/*.gif
+emoji/*.png
+emoji/*.webp
+
+# Node modules
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Config with sensitive data (提交模板，不提交实际配置)
+config/ai_config.toml
+config/bot_config.toml
+
+# Music files (不提交)
+web/music/*.mp3
+web/music/*.wav
+
+# Frontend build (不提交，用户需要自己构建)
+web/frontend/dist/
