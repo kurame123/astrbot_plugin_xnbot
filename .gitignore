@@ -5,8 +5,8 @@ __pycache__/
 *.so
 .Python
 *.egg-info/
-dist/
-build/
+/dist/
+/build/
 
 # Data files (用户数据，不提交)
 data/*.db
@@ -46,6 +46,3 @@ config/bot_config.toml
 # Music files (不提交)
 web/music/*.mp3
 web/music/*.wav
-
-# Frontend build (不提交，用户需要自己构建)
-web/frontend/dist/
