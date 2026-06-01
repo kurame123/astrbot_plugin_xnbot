@@ -115,7 +115,7 @@ A: 检查 AstrBot 日志，通常是依赖缺失或 Python 版本不兼容
 
 ## 与原版 XNBot 的区别
 
-| 项目 | 原版 XNBot | 小雫 by AstrBot |
+| 项目 | 原版 XNBot | 小雫 astrbot插件 |
 |------|-----------|-----------------|
 | 框架 | NoneBot2 | AstrBot |
 | QQ 协议 | OneBot v11（直接连接） | AstrBot 平台适配器 |
