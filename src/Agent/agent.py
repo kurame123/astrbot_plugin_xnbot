@@ -1022,6 +1022,7 @@ class CoreAgent(MemoryAgent):
         current_activity: str,
         reflections_summary: str,
         time_since_last: str,
+        recent_context: str = "",
     ) -> tuple[str, str]:
         """
         Agent 决定是否主动发消息。
@@ -1029,10 +1030,15 @@ class CoreAgent(MemoryAgent):
           - ("skip", "") — 不发
           - ("send", "消息内容") — 发送
         """
+        recent_block = (
+            f"\n最近几条对话（供参考，不要重复这些话题，也不要直接引用）：\n{recent_context}\n"
+            if recent_context else ""
+        )
         user_msg = (
             f"当前时间是{current_time}，小雫当前正在「{current_activity}」。\n"
             f"距上次与用户对话：{time_since_last}。\n"
-            f"近期反思摘要：{reflections_summary}\n\n"
+            f"近期反思摘要：{reflections_summary}\n"
+            f"{recent_block}\n"
             f"请判断是否需要主动给用户发消息。你有三种信息来源，请灵活组合：\n\n"
             f"【① 记忆】search_memory — 检索过去的对话片段。\n"
             f"  → 用途：作为话题的起点或灵感，不要直接复述旧对话。\n"
@@ -1046,6 +1052,7 @@ class CoreAgent(MemoryAgent):
             f"  → 这是让消息「有新鲜感」的关键，不要只聊旧事。\n\n"
             f"⚠️ 默认倾向 skip：大多数心跳不必打扰用户。\n"
             f"⚠️ 禁止早安打卡、固定关怀模板、重复上次说过的话。\n"
+            f"⚠️ 消息要短，像真实聊天一样，不超过两三句。\n"
             f"⚠️ 好的消息 = 当前活动 + 三种来源的自然融合。\n"
             f"⚠️ 如果不需要发消息，使用 finish(type=\"skip\")。\n"
             f"⚠️ 如果需要发消息，先想清楚话题，再 finish(type=\"send\", content=\"消息内容\")。"

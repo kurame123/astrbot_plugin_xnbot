@@ -104,7 +104,10 @@ class XNBotPlugin(star.Star):
                     monitor.start_user_cycle(item["user_id"], item["sleep_hours"])
                     logger.info(f"[XNBot] 已恢复心跳计时器 user={item['user_id']}")
                 else:
-                    asyncio.create_task(monitor._on_wake(item["user_id"]))
+                    # 已过唤醒时间，但 bot 实例此时还未绑定，登记到 pending
+                    # 等 on_message 首次触发时绑定 bot 后再处理
+                    monitor._pending_wake_on_connect[item["user_id"]] = True
+                    logger.info(f"[XNBot] 已过唤醒时间 user={item['user_id']}，等待 bot 实例绑定后触发醒来")
             if restored:
                 logger.info(f"[XNBot] 恢复了 {len(restored)} 个睡眠状态")
             monitor.restore_pending_heartbeats()
@@ -182,6 +185,17 @@ class XNBotPlugin(star.Star):
         # 存储 bot 实例用于主动发消息
         if self._bot is None:
             self._bot = event.bot
+            # 绑定 bot 到心跳监控器，并触发重启时未及时执行的醒来流程
+            try:
+                from XN_Core.heartbeat import get_monitor
+                monitor = get_monitor()
+                monitor.set_bot(self._bot)
+                for user_id in list(monitor._pending_wake_on_connect.keys()):
+                    logger.info(f"[XNBot] bot 已绑定，补触发醒来流程 user={user_id}")
+                    asyncio.create_task(monitor._on_wake(user_id))
+                monitor._pending_wake_on_connect.clear()
+            except Exception as e:
+                logger.warning(f"[XNBot] 心跳监控绑定失败: {e}")
 
         try:
             # 调用小雫的消息处理流程
@@ -230,11 +244,15 @@ class XNBotPlugin(star.Star):
             session_manager.append_message(session_id, "user", user_text, timestamp=now)
             save_user_route(user_id, session_id, group_id, user_name)
             try:
-                from src.XN_Memory import get_writer
-                get_writer().submit(
+                # 睡眠期间消息直接写入 SQLite，不走关键词提取队列
+                # 避免因 LLM 调用失败导致消息丢失，醒来后无法读取未读
+                from src.XN_Memory import get_store
+                get_store().insert_memory(
                     user_id=user_id,
                     user_text=user_text,
                     bot_text="[睡眠中，小雫未回复]",
+                    keywords=[],
+                    importance=0.5,
                     session_id=session_id,
                     nickname=user_name,
                     created_at=now,
@@ -511,19 +529,19 @@ class XNBotPlugin(star.Star):
         return "自由活动"
 
     async def _send_to_user(self, user_id: str, group_id: str | None, text: str) -> None:
-        """通过 AstrBot 发送消息（用于心跳、未读回复等主动消息）"""
+        """通过 AstrBot 发送消息，经过切分后逐条发送（模拟真实聊天节奏）"""
         if not self._bot:
             return
         try:
-            # 构造消息事件结果
-            result = MessageEventResult()
-            result.result_content_type = "text"
-            result.async_stream_callback = None
-
-            if group_id:
-                await self._bot.send_group_msg(group_id=int(group_id), message=text)
-            else:
-                await self._bot.send_private_msg(user_id=int(user_id), message=text)
+            from src.bot.core.reply_manager import segment_reply, get_send_interval
+            segments = await segment_reply("", text)
+            for i, seg in enumerate(segments):
+                if i > 0:
+                    await asyncio.sleep(get_send_interval())
+                if group_id:
+                    await self._bot.send_group_msg(group_id=int(group_id), message=seg)
+                else:
+                    await self._bot.send_private_msg(user_id=int(user_id), message=seg)
         except Exception as e:
             logger.warning(f"[XNBot] 发送消息失败 user={user_id}: {e}")
 

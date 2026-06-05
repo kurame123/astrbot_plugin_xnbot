@@ -28,6 +28,7 @@ class HeartbeatMonitor:
         self._bot = None
         self._schedules: dict[str, list[dict]] = {}      # user_id → 日程列表 [{"start","end","activity"}]
         self._heartbeat_plans: dict[str, dict] = {}      # user_id → {count, offsets_minutes}
+        self._pending_wake_on_connect: dict[str, bool] = {}  # bot 连接前需要触发醒来的用户
 
     def set_bot(self, bot) -> None:
         self._bot = bot
@@ -244,6 +245,9 @@ class HeartbeatMonitor:
         if rel.get("awkward", 0) > 0.6:
             reflections_summary += "；关系略别扭，若无事可 skip"
 
+        # 读取最近几条对话，让 Agent 感知当前话题和上次说了什么
+        recent_context = self._get_recent_chat_context(user_id, limit=6)
+
         core_agent = get_core_agent()
         decision, message = await core_agent.run_heartbeat_decision(
             user_id=user_id,
@@ -251,6 +255,7 @@ class HeartbeatMonitor:
             current_activity=current_activity,
             reflections_summary=reflections_summary,
             time_since_last=time_since,
+            recent_context=recent_context,
         )
 
         # 记录日志
@@ -316,19 +321,29 @@ class HeartbeatMonitor:
     # ========================
 
     async def _send_to_user(self, user_id: str, text: str) -> None:
-        """通过 Bot 发送消息（优先最近活跃的群聊或私聊）"""
+        """通过 Bot 发送消息，经过切分后逐条发送（模拟真实聊天节奏）"""
         if not self._bot:
             return
         try:
             from XN_Core.reflection import get_user_route
+            from src.bot.core.reply_manager import segment_reply, get_send_interval
+
             route = get_user_route(user_id)
-            if route and route.get("is_group") and route.get("group_id"):
-                await self._bot.send_group_msg(
-                    group_id=int(route["group_id"]),
-                    message=text,
-                )
-            else:
-                await self._bot.send_private_msg(user_id=int(user_id), message=text)
+            is_group = route and route.get("is_group") and route.get("group_id")
+
+            segments = await segment_reply("", text)
+
+            for i, seg in enumerate(segments):
+                if i > 0:
+                    await asyncio.sleep(get_send_interval())
+                if is_group:
+                    await self._bot.send_group_msg(
+                        group_id=int(route["group_id"]),
+                        message=seg,
+                    )
+                else:
+                    await self._bot.send_private_msg(user_id=int(user_id), message=seg)
+
         except Exception as e:
             logger.warning(f"[XN_Core] 发送消息失败 user={user_id}: {e}")
 
@@ -347,6 +362,21 @@ class HeartbeatMonitor:
             return f"{int(diff / 3600)}小时前"
         else:
             return f"{int(diff / 86400)}天前"
+
+    def _get_recent_chat_context(self, user_id: str, limit: int = 6) -> str:
+        """获取最近几轮对话的文本，供心跳决策感知当前话题和上次说了什么"""
+        from src.XN_Memory import get_store
+        store = get_store()
+        msgs = store.get_conversations_in_range(user_id=user_id, count=limit)
+        if not msgs:
+            return ""
+        lines = []
+        for m in msgs:
+            if m["role"] == "user":
+                lines.append(f"用户：{m['content']}")
+            elif m["content"] != "[睡眠中，小雫未回复]":
+                lines.append(f"小雫：{m['content']}")
+        return "\n".join(lines)
 
     def _save_json(self, user_id: str, name: str, data) -> None:
         """保存 JSON 到 data/core_state/"""

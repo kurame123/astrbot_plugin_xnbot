@@ -37,15 +37,33 @@ def _load_toml(file_path: Path) -> dict[str, Any]:
         return tomllib.load(f)
 
 
+def _ensure_config_file(filename: str) -> Path:
+    """确保配置文件存在，如果不存在则从示例文件复制"""
+    config_path = CONFIG_DIR / filename
+    example_path = CONFIG_DIR / f"{filename.rsplit('.', 1)[0]}.example.toml"
+
+    if not config_path.exists():
+        if example_path.exists():
+            import shutil
+            shutil.copy2(example_path, config_path)
+            print(f"[XNBot] 已从示例创建配置文件: {filename}")
+        else:
+            raise FileNotFoundError(
+                f"配置文件不存在: {config_path}\n"
+                f"请复制 {example_path} 为 {config_path} 并填入你的配置"
+            )
+    return config_path
+
+
 def load_ai_config() -> dict[str, Any]:
     """加载 AI 配置"""
-    config_path = CONFIG_DIR / "ai_config.toml"
+    config_path = _ensure_config_file("ai_config.toml")
     return _load_toml(config_path)
 
 
 def load_bot_config() -> dict[str, Any]:
     """加载 Bot 配置"""
-    config_path = CONFIG_DIR / "bot_config.toml"
+    config_path = _ensure_config_file("bot_config.toml")
     return _load_toml(config_path)
 
 
